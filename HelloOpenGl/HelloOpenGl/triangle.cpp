@@ -80,7 +80,7 @@ void SpecialKeys(int key, int x, int y){
 
 }
 
-int main(int argc, char* argv[])
+int Triangle_main(int argc, char* argv[])
 {
 	gltSetWorkingDirectory(argv[0]);
 	glutInit(&argc, argv); //≥ı ºªØglut
