@@ -36,6 +36,41 @@ GLint	locMVP;				// The location of the ModelViewProjection matrix uniform
 GLint	locMV;				// The location of the ModelView matrix uniform
 GLint	locNM;				// The location of the Normal matrix uniform
 
+GLint locTexture;
+GLuint texture;
+
+// Load a TGA as a 2D Texture. Completely initialize the state
+bool LoadTGATexture(const char *szFileName, GLenum minFilter, GLenum magFilter, GLenum wrapMode)
+{
+	GLbyte *pBits;
+	int nWidth, nHeight, nComponents;
+	GLenum eFormat;
+
+	// Read the texture bits
+	pBits = gltReadTGABits(szFileName, &nWidth, &nHeight, &nComponents, &eFormat);
+	if (pBits == NULL)
+		return false;
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, wrapMode);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, wrapMode);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, minFilter);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, magFilter);
+
+	glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+	glTexImage2D(GL_TEXTURE_2D, 0, nComponents, nWidth, nHeight, 0,
+		eFormat, GL_UNSIGNED_BYTE, pBits);
+
+	free(pBits);
+
+	if (minFilter == GL_LINEAR_MIPMAP_LINEAR ||
+		minFilter == GL_LINEAR_MIPMAP_NEAREST ||
+		minFilter == GL_NEAREST_MIPMAP_LINEAR ||
+		minFilter == GL_NEAREST_MIPMAP_NEAREST)
+		glGenerateMipmap(GL_TEXTURE_2D);
+
+	return true;
+}
 
 // This function does any needed initialization on the rendering
 // context. 
@@ -54,7 +89,7 @@ void SetupRC(void)
     gltMakeSphere(sphereBatch, 1.0f, 26, 13);
 
 	ADSLightShader = shaderManager.LoadShaderPairWithAttributes("ADSPhong.vp", "ADSPhong.fp", 2, GLT_ATTRIBUTE_VERTEX, "vVertex",
-			GLT_ATTRIBUTE_NORMAL, "vNormal");
+			GLT_ATTRIBUTE_NORMAL, "vNormal",GLT_ATTRIBUTE_TEXTURE0,"vTexture0");
 
 	locAmbient = glGetUniformLocation(ADSLightShader, "ambientColor");
 	locDiffuse = glGetUniformLocation(ADSLightShader, "diffuseColor");
@@ -63,12 +98,18 @@ void SetupRC(void)
 	locMVP = glGetUniformLocation(ADSLightShader, "mvpMatrix");
 	locMV  = glGetUniformLocation(ADSLightShader, "mvMatrix");
 	locNM  = glGetUniformLocation(ADSLightShader, "normalMatrix");
+
+	//纹理相关
+	locTexture = glGetUniformLocation(ADSLightShader,"colorMap");
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D,texture);
+	LoadTGATexture("CoolTexture.tga",GL_LINEAR_MIPMAP_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE); //加载纹理到绑定后的纹理单元上面
 	}
 
 // Cleanup
 void ShutdownRC(void)
 {
-
+	glDeleteTextures(1, &texture);
 }
 
 
@@ -88,6 +129,8 @@ void RenderScene(void)
 		GLfloat vDiffuseColor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
 		GLfloat vSpecularColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+		glBindTexture(GL_TEXTURE_2D, texture);//绑定纹理
+
 		glUseProgram(ADSLightShader);
 		glUniform4fv(locAmbient, 1, vAmbientColor);
 		glUniform4fv(locDiffuse, 1, vDiffuseColor);
@@ -96,6 +139,7 @@ void RenderScene(void)
 		glUniformMatrix4fv(locMVP, 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix());
 		glUniformMatrix4fv(locMV, 1, GL_FALSE, transformPipeline.GetModelViewMatrix());
 		glUniformMatrix3fv(locNM, 1, GL_FALSE, transformPipeline.GetNormalMatrix());
+		glUniform1i(locTexture, 0); //现在来说只是用了一个纹理所以现在直接将这个值设置为0 以后可能会有多个值
     sphereBatch.Draw();
 
     modelViewMatrix.PopMatrix();
