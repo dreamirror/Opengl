@@ -77,19 +77,20 @@ bool LoadTGATexture(const char *szFileName, GLenum minFilter, GLenum magFilter, 
 void SetupRC(void)
 	{
 	// Background
-	glClearColor(0.0f, 0.0f, 0.0f, 1.0f );
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 
-    shaderManager.InitializeStockShaders();
-    viewFrame.MoveForward(4.0f);
+	shaderManager.InitializeStockShaders();
+	viewFrame.MoveForward(4.0f);
 
-    // Make the sphere
-    gltMakeSphere(sphereBatch, 1.0f, 26, 13);
+	// Make the sphere
+	gltMakeSphere(sphereBatch, 1.0f, 26, 13);
 
-	ADSLightShader = shaderManager.LoadShaderPairWithAttributes("ADSPhong.vp", "ADSPhong.fp", 2, GLT_ATTRIBUTE_VERTEX, "vVertex",
-			GLT_ATTRIBUTE_NORMAL, "vNormal",GLT_ATTRIBUTE_TEXTURE0,"vTexture0");
+
+	ADSLightShader = shaderManager.LoadShaderPairWithAttributes("ADSPhong.vp", "ADSPhong.fp", 3, GLT_ATTRIBUTE_VERTEX, "vVertex", //加入了纹理数据之后每个定点就是三个属性了这里要注意
+		GLT_ATTRIBUTE_NORMAL, "vNormal", GLT_ATTRIBUTE_TEXTURE0, "vTexture0");
 
 	locAmbient = glGetUniformLocation(ADSLightShader, "ambientColor");
 	locDiffuse = glGetUniformLocation(ADSLightShader, "diffuseColor");
@@ -106,6 +107,7 @@ void SetupRC(void)
 	LoadTGATexture("CoolTexture.tga",GL_LINEAR_MIPMAP_LINEAR,GL_LINEAR,GL_CLAMP_TO_EDGE); //加载纹理到绑定后的纹理单元上面
 	}
 
+
 // Cleanup
 void ShutdownRC(void)
 {
@@ -115,78 +117,76 @@ void ShutdownRC(void)
 
 // Called to draw scene
 void RenderScene(void)
-	{
+{
 	static CStopWatch rotTimer;
 
 	// Clear the window and the depth buffer
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-    modelViewMatrix.PushMatrix(viewFrame);
-		modelViewMatrix.Rotate(rotTimer.GetElapsedSeconds() * 10.0f, 0.0f, 1.0f, 0.0f);
 
-		GLfloat vEyeLight[] = { -100.0f, 100.0f, 100.0f };
-		GLfloat vAmbientColor[] = { 0.1f, 0.1f, 0.1f, 1.0f };
-		GLfloat vDiffuseColor[] = { 0.0f, 0.0f, 1.0f, 1.0f };
-		GLfloat vSpecularColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	modelViewMatrix.PushMatrix(viewFrame);
+	modelViewMatrix.Rotate(rotTimer.GetElapsedSeconds() * 10.0f, 0.0f, 1.0f, 0.0f);
 
-		glBindTexture(GL_TEXTURE_2D, texture);//绑定纹理
+	GLfloat vEyeLight[] = { -100.0f, 100.0f, 100.0f };
+	GLfloat vAmbientColor[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+	GLfloat vDiffuseColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat vSpecularColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-		glUseProgram(ADSLightShader);
-		glUniform4fv(locAmbient, 1, vAmbientColor);
-		glUniform4fv(locDiffuse, 1, vDiffuseColor);
-		glUniform4fv(locSpecular, 1, vSpecularColor);
-		glUniform3fv(locLight, 1, vEyeLight);
-		glUniformMatrix4fv(locMVP, 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix());
-		glUniformMatrix4fv(locMV, 1, GL_FALSE, transformPipeline.GetModelViewMatrix());
-		glUniformMatrix3fv(locNM, 1, GL_FALSE, transformPipeline.GetNormalMatrix());
-		glUniform1i(locTexture, 0); //现在来说只是用了一个纹理所以现在直接将这个值设置为0 以后可能会有多个值
-    sphereBatch.Draw();
+	glBindTexture(GL_TEXTURE_2D, texture);
+	glUseProgram(ADSLightShader);
+	glUniform4fv(locAmbient, 1, vAmbientColor);
+	glUniform4fv(locDiffuse, 1, vDiffuseColor);
+	glUniform4fv(locSpecular, 1, vSpecularColor);
+	glUniform3fv(locLight, 1, vEyeLight);
+	glUniformMatrix4fv(locMVP, 1, GL_FALSE, transformPipeline.GetModelViewProjectionMatrix());
+	glUniformMatrix4fv(locMV, 1, GL_FALSE, transformPipeline.GetModelViewMatrix());
+	glUniformMatrix3fv(locNM, 1, GL_FALSE, transformPipeline.GetNormalMatrix());
+	glUniform1i(locTexture, 0);
+	sphereBatch.Draw();
 
-    modelViewMatrix.PopMatrix();
+	modelViewMatrix.PopMatrix();
 
-
-    glutSwapBuffers();
+	glutSwapBuffers();
 	glutPostRedisplay();
-	}
+}
 
 
 
 void ChangeSize(int w, int h)
-	{
+{
 	// Prevent a divide by zero
-	if(h == 0)
+	if (h == 0)
 		h = 1;
 
 	// Set Viewport to window dimensions
-    glViewport(0, 0, w, h);
+	glViewport(0, 0, w, h);
 
-    viewFrustum.SetPerspective(35.0f, float(w)/float(h), 1.0f, 100.0f);
-    
-    projectionMatrix.LoadMatrix(viewFrustum.GetProjectionMatrix());
-    transformPipeline.SetMatrixStacks(modelViewMatrix, projectionMatrix);
-	}
+	viewFrustum.SetPerspective(35.0f, float(w) / float(h), 1.0f, 100.0f);
+
+	projectionMatrix.LoadMatrix(viewFrustum.GetProjectionMatrix());
+	transformPipeline.SetMatrixStacks(modelViewMatrix, projectionMatrix);
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Main entry point for GLUT based programs
 int main(int argc, char* argv[])
-    {
+{
 	gltSetWorkingDirectory(argv[0]);
-	
+
 	glutInit(&argc, argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH | GLUT_STENCIL);
 	glutInitWindowSize(800, 600);
-	glutCreateWindow("ADS Lighting, Phong Shading");
-    glutReshapeFunc(ChangeSize);
-    glutDisplayFunc(RenderScene);
+	glutCreateWindow("Lit Texture");
+	glutReshapeFunc(ChangeSize);
+	glutDisplayFunc(RenderScene);
 
 	GLenum err = glewInit();
 	if (GLEW_OK != err) {
 		fprintf(stderr, "GLEW Error: %s\n", glewGetErrorString(err));
 		return 1;
-    }
-	
-	SetupRC();    
+	}
+
+	SetupRC();
 	glutMainLoop();
 	ShutdownRC();
 	return 0;
-    }
+}
