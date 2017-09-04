@@ -7,11 +7,12 @@
 // Incoming per vertex... position and normal
 in vec4 vVertex;
 in vec3 vNormal;
-
+in vec4 vTexture0;
 // Set per batch
 uniform vec4    ambientColor;
 uniform vec4    diffuseColor;	
 uniform vec4    specularColor;
+uniform sampler2D colorMap;
 
 uniform vec3	vLightPosition;
 uniform mat4	mvpMatrix;
@@ -20,7 +21,7 @@ uniform mat3	normalMatrix;
 
 // Color to fragment program
 smooth out vec4 vVaryingColor;
-
+smooth out vec2 vTexCoords;
 void main(void) 
     { 
     // Get surface normal in eye coordinates
@@ -42,7 +43,8 @@ void main(void)
     // Add in ambient light
     vVaryingColor += ambientColor;
 
-
+	vVaryingColor *= texture(colorMap, vTexture0.st);
+	vTexCoords = vTexture0.st;
     // Specular Light
     vec3 vReflection = normalize(reflect(-vLightDir, vEyeNormal));
     float spec = max(0.0, dot(vEyeNormal, vReflection));

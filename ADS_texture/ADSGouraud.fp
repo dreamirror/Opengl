@@ -6,7 +6,7 @@
 
 out vec4 vFragColor;
 smooth in vec4 vVaryingColor;
-
+smooth in vec2 vTexCoords;
 void main(void)
    { 
    vFragColor = vVaryingColor;
